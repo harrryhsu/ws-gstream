@@ -15,8 +15,15 @@ Boolean Open(const CallbackInfo &info)
 	device.iaddr_bytes = 1;
 	auto busName = info[0].ToString().Utf8Value().c_str();
 	auto ret = i2c_open(busName);
+	if (ret != -1)
+		device.bus = ret;
 	auto env = info.Env();
 	return Boolean::New(env, ret != -1);
+}
+
+void Close(const CallbackInfo &info)
+{
+	i2c_close(device.bus);
 }
 
 Buffer<unsigned char> Read(const CallbackInfo &info)
@@ -25,14 +32,23 @@ Buffer<unsigned char> Read(const CallbackInfo &info)
 	auto buf = info[1].As<Buffer<unsigned char>>().Data();
 	auto len = info[2].As<Number>().Uint32Value();
 	i2c_ioctl_read(&device, iaddr, buf, len);
-	printf("%d", len);
 	return Buffer<unsigned char>::New(info.Env(), buf, len);
+}
+
+void Write(const CallbackInfo &info)
+{
+	auto iaddr = info[0].ToNumber().Uint32Value();
+	auto buf = info[1].As<Buffer<unsigned char>>().Data();
+	auto len = info[2].As<Number>().Uint32Value();
+	i2c_ioctl_write(&device, iaddr, buf, len);
 }
 
 Object Init(Env env, Object exports)
 {
 	exports.Set(String::New(env, "open"), Function::New(env, Open));
+	exports.Set(String::New(env, "close"), Function::New(env, Close));
 	exports.Set(String::New(env, "read"), Function::New(env, Read));
+	exports.Set(String::New(env, "write"), Function::New(env, Write));
 	return exports;
 }
 
