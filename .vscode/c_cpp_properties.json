@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:\\Users\\qspia\\AppData\\Local\\node-gyp\\Cache\\14.17.6\\include\\node",
-                "${workspaceFolder}/node_modules/**"
+                "${workspaceFolder}/node_modules/**",
+                "${workspaceFolder}/node_modules/node-addon-api"
             ],
             "defines": [
                 "_DEBUG",
