@@ -3,7 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const ci2c = require("./ci2c");
-const stream = requrie("./stream");
+const stream = require("./stream");
 
 const app = express();
 
@@ -56,7 +56,6 @@ app.use(function (req, res, next) {
 app.use(express.static("public"));
 
 app.get("/api/init", (req, res) => {
-  ci2c.Lens_FindMCU();
   ci2c.Lens_ICRMode(true);
   ci2c.Lens_ReadLensData();
   ci2c.Lens_Initial();
@@ -75,15 +74,17 @@ app.get("/api/focus/down", (req, res) => {
 });
 
 app.get("/api/zoom/up", (req, res) => {
-  ci2c.Lens_Zoommove(Lens_GetZoommoveStep() + 1);
+  ci2c.Lens_Zoommove(ci2c.Lens_GetZoommoveStep() + 1);
   okay(res);
 });
 
 app.get("/api/zoom/down", (req, res) => {
-  ci2c.Lens_Zoommove(Lens_GetZoommoveStep() - 1);
+  ci2c.Lens_Zoommove(ci2c.Lens_GetZoommoveStep() - 1);
   okay(res);
 });
 
+ci2c.Lens_FindMCU();
+stream.play();
 app.listen(8080, () => console.log(`App listening at http://localhost:8080`));
 
 const exitHandler = (options, exitCode) => {
