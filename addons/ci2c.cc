@@ -15,6 +15,8 @@ Number Open(const CallbackInfo &info)
 	device.iaddr_bytes = 1;
 	auto busName = info[0].ToString().Utf8Value().c_str();
 	auto ret = i2c_open(busName);
+	if (ret != -1)
+		device.bus = ret;
 	auto env = info.Env();
 	return Number::New(env, ret);
 }
