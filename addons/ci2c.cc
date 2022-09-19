@@ -30,6 +30,7 @@ Number Read(const CallbackInfo &info)
 	auto buf = info[1].As<Buffer<unsigned char>>();
 	auto len = info[2].As<Number>().Uint32Value();
 	auto ret = i2c_ioctl_read(&device, iaddr, buf.Data(), len);
+	auto env = info.Env();
 	return Number::New(env, ret);
 }
 
@@ -39,6 +40,7 @@ Number Write(const CallbackInfo &info)
 	auto buf = info[1].As<Buffer<unsigned char>>();
 	auto len = info[2].As<Number>().Uint32Value();
 	auto ret = i2c_ioctl_write(&device, iaddr, buf.Data(), len);
+	auto env = info.Env();
 	return Number::New(env, ret);
 }
 
