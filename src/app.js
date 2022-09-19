@@ -136,39 +136,40 @@ const i2cbuff = new Buffer(520);
 
 const read = (cmd, length) => {
   return new Promise((res, rej) => {
-		try {
-			const buffer = ci2c.read(cmd, length);
-			res(buffer);
-		}catch(e){
-			rej(e);
-		}
+    try {
+      const buffer = ci2c.read(cmd, i2cbuff, length);
+      res(buffer);
+    } catch (e) {
+      rej(e);
+    }
   });
 };
 
 const write = (cmd, length) => {
   return new Promise((res, rej) => {
-		try {
-			ci2c.write(cmd, i2cbuff, length);
-			res();
-		}catch(e){
-			rej(e);
-		}
+    try {
+      ci2c.write(cmd, i2cbuff, length);
+      res();
+    } catch (e) {
+      rej(e);
+    }
   });
 };
 
 const open = async () => {
   for (let i = 0; i < 8; i++) {
     try {
-			if (ci2c.open("/dev/i2c-" + i)){
-				const buffer = read(0x0, 4);
-				console.log(
-					`Open /dev/i2c-2 MCU 0x15 ID=${buffer[0] * 256 + buffer[1]} ${
-						buffer[2] * 256 + buffer[3]
-					} success`
-				);
-			}
+      if (ci2c.open("/dev/i2c-" + i)) {
+        const buffer = read(0x0, 4);
+        console.log(
+          `Open /dev/i2c-2 MCU 0x15 ID=${buffer[0] * 256 + buffer[1]} ${
+            buffer[2] * 256 + buffer[3]
+          } success`
+        );
+      }
     } catch (e) {}
   }
+};
 
 const readLensData = () => {
   return read(SB_LENSDATA, SB_LENSDATAbytes).then((buffer) => {
