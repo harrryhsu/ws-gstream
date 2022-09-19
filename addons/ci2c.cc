@@ -29,10 +29,10 @@ void Close(const CallbackInfo &info)
 Buffer<unsigned char> Read(const CallbackInfo &info)
 {
 	auto iaddr = info[0].ToNumber().Uint32Value();
-	auto buf = info[1].As<Buffer<unsigned char>>().Data();
+	auto buf = info[1].As<Buffer<unsigned char>>();
 	auto len = info[2].As<Number>().Uint32Value();
-	i2c_ioctl_read(&device, iaddr, buf, len);
-	return Buffer<unsigned char>::New(info.Env(), buf, len);
+	i2c_ioctl_read(&device, iaddr, buf.Data(), len);
+	return buf;
 }
 
 void Write(const CallbackInfo &info)
