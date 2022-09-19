@@ -272,27 +272,6 @@ bool Lens_ReadLensData(void)
 
 	memcpy(&PIRIS_TBL, &i2cbuff[2], sizeof(PIRIS_TBL));
 
-	printf("ZMotorData_TBL read\n");
-	for (tempdata = 0; tempdata < 15;)
-	{
-		printf("%d %d \n", ZMotorData_TBL[tempdata][0], ZMotorData_TBL[tempdata][1]);
-		tempdata++;
-	}
-
-	printf("ZMotorSTB_TBL read\n");
-	for (tempdata = 0; tempdata < 20;)
-	{
-		printf("%d %d %d %d\n", ZMotorSTB_TBL[tempdata][0], ZMotorSTB_TBL[tempdata][1], ZMotorSTB_TBL[tempdata][2], ZMotorSTB_TBL[tempdata][3]);
-		tempdata++;
-	}
-
-	printf("PIRIS_TBL read\n");
-	for (tempdata = 0; tempdata < 19;)
-	{
-		printf("%d \n", PIRIS_TBL[tempdata]);
-		tempdata++;
-	}
-
 	return true;
 }
 
