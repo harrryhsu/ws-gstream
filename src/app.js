@@ -1,6 +1,4 @@
-const ci2c = require("bindings")("ci2c");
-
-console.log(ci2c);
+const ci2c = require("./ci2c");
 
 const SB_I2CAddr = 0x15;
 const SB_GetINFO = 0x00;
@@ -134,51 +132,52 @@ const PIRIS_TBL = [
   1, // Lens ID
 ];
 
-var i2cbus;
-const i2cbuff = Buffer.from([...Array(520)].map((i) => 0));
+const i2cbuff = new Buffer(520);
 
-// const read = (cmd, length) => {
-//   return new Promise((res, rej) => {
-//     i2cbus.readBytes(cmd, length, (err, buffer) => {
-//       if (err) rej(err);
-//       else res(buffer);
-//     });
-//   });
-// };
+const read = (cmd, length) => {
+  return new Promise((res, rej) => {
+		try {
+			const buffer = ci2c.read(cmd, length);
+			res(buffer);
+		}catch(e){
+			rej(e);
+		}
+  });
+};
 
-// const write = (cmd, length) => {
-//   return new Promise((res, rej) => {
-//     i2cbus.writeI2cBlock(SB_I2CAddr, cmd, length, i2cbuff, (err, rawData) => {
-//       if (err) rej(err);
-//       else res();
-//     });
-//   });
-// };
+const write = (cmd, length) => {
+  return new Promise((res, rej) => {
+		try {
+			ci2c.write(cmd, i2cbuff, length);
+			res();
+		}catch(e){
+			rej(e);
+		}
+  });
+};
 
-// const open = async () => {
-//   for (let i = 0; i < 8; i++) {
-//     try {
-//       i2cbus = new i2c(SB_I2CAddr, { device: "/dev/i2c-" + i });
-//       if (i2cbus) {
-//         const buffer = await read(0x0, 4);
-//         console.log(
-//           `Open bus-${i} MCU 0x15 ID=${buffer[0] * 256 + buffer[1]} ${
-//             buffer[2] * 256 + buffer[3]
-//           } success\n`
-//         );
-//         return;
-//       }
-//     } catch (e) {}
-//   }
+const open = async () => {
+  for (let i = 0; i < 8; i++) {
+    try {
+			if (ci2c.open("/dev/i2c-" + i)){
+				const buffer = read(0x0, 4);
+				console.log(
+					`Open /dev/i2c-2 MCU 0x15 ID=${buffer[0] * 256 + buffer[1]} ${
+						buffer[2] * 256 + buffer[3]
+					} success`
+				);
+			}
+    } catch (e) {}
+  }
 
-//   throw "I2C Bus not found";
-// };
+const readLensData = () => {
+  return read(SB_LENSDATA, SB_LENSDATAbytes).then((buffer) => {
+    console.log(buffer);
+  });
+};
 
-// const readLensData = () => {
-//   return read(SB_LENSDATA, SB_LENSDATAbytes).then((buffer) => {
-//     console.log(buffer);
-//   });
-// };
+open();
+readLensData();
 
 // const focus = (focusstb) => {
 //   Lenspara.focussteps += focusstb;
