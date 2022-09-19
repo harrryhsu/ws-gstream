@@ -137,7 +137,8 @@ const i2cbuff = new Buffer(520);
 const read = (cmd, length) => {
   return new Promise((res, rej) => {
     try {
-      const buffer = ci2c.read(cmd, i2cbuff, length);
+      const cret = ci2c.read(cmd, i2cbuff, length);
+      console.log(cret);
       res(buffer);
     } catch (e) {
       rej(e);
