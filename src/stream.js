@@ -5,13 +5,13 @@ if (process.env.NODE_ENV == "development") {
 		rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !
 		rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! 
 		x264enc bframes=0 weightb=false speed-preset=1 cabac=false ! 
-		queue !
-		appsink name=appsink
+		queue ! appsink name=appsink
 	`);
 } else {
   stream = new gstreamer.Pipeline(`
 		nvarguscamerasrc sensor-id=0 name=src ! 
-		nvv4l2h264enc num-B-Frames=0 disable-cabac=true preset-level=1 ! 
+		video/x-raw(memory:NVMM),width=1080,height=720,framerate=10/1,format=NV12 !
+		nvv4l2h264enc num-B-Frames=0 disable-cabac=true preset-level=1 bitrate=1000000 ! 
 		tee name=t ! queue ! h264parse ! rtspclientsink location=rtsp://localhost:8554/live protocols=tcp
 		t. ! queue ! appsink name=appsink
 	`);
