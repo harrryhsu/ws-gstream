@@ -120,7 +120,7 @@ app.post("/api/setting", (req, res) => {
   const setting = req.body;
   if (process.env.NODE_ENV === "production") {
     Object.keys(setting).forEach((key) => stream.setSrcProp(key, setting[key]));
-    stream.restart();
+    // stream.restart();
   } else
     Object.keys(setting).forEach((key) => (stream.setting[key] = setting[key]));
   okay(res);
@@ -164,7 +164,7 @@ const waitForRtsp = () => {
     });
 
     sstream.on("exit", waitForRtsp);
-  }, 10000);
+  }, 3000);
 };
 
 waitForRtsp();
