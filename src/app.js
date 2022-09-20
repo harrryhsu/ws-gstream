@@ -155,6 +155,7 @@ app
 const exitHandler = (...args) => {
   console.log(args);
   stream.stop();
+  ci2c.i2c_close();
   process.exit();
 };
 
