@@ -108,6 +108,8 @@ const ApiWrapper = () => {
     zoomUp: () => post("zoom/up"),
     zoomDown: () => post("zoom/down"),
     init: () => post("init"),
+    getSetting: () => get("setting"),
+    postSetting: (body) => post("setting", body),
   };
 };
 
@@ -124,7 +126,6 @@ const start = (wsUrl) => {
   const canvas = app.querySelector("canvas");
   canvas.style.width = "1080px";
   canvas.style.height = "720px";
-  console.log(canvas);
   var ws = new WebSocket(wsUrl);
   ws.onmessage = async function (data) {
     const buffer = await data.data.arrayBuffer();
@@ -135,11 +136,41 @@ const start = (wsUrl) => {
 
 start(`ws://${window.location.host}`);
 
-var elem = document.getElementById("focus-up");
-elem.addEventListener("click", api.focusUp);
-elem = document.getElementById("focus-down");
-elem.addEventListener("click", api.focusDown);
-elem = document.getElementById("zoom-up");
-elem.addEventListener("click", api.zoomUp);
-elem = document.getElementById("zoom-down");
-elem.addEventListener("click", api.zoomDown);
+const control = document.getElementById("control");
+const newButton = (text) => {
+  const button = document.createElement("button");
+  button.textContent = text;
+  control.appendChild(button);
+  return button;
+};
+
+newButton("Focus up").addEventListener("click", api.focusUp);
+newButton("Focus down").addEventListener("click", api.focusDown);
+newButton("Zoom up").addEventListener("click", api.zoomUp);
+newButton("Zoom down").addEventListener("click", api.focuzoomDownsDown);
+
+const form = document.getElementById("form");
+const newInput = (id, text, value, type = "text") => {
+  return form.insertAdjacentHTML(
+    "beforeend",
+    `
+		<label for="${id}">${text}</label><br>
+		<input type="${type}" id="${id}" name="${id}" value="${value}"><br>
+		`
+  );
+};
+
+api.getSetting().then((settings) => {
+  Object.keys(settings).forEach((key) => {
+    const value = settings[key];
+    newInput(key, key, value);
+  });
+  form.insertAdjacentHTML("beforeend", `<input type="submit" value="Update">`);
+});
+
+form.addEventListener("submit", (e, ...args) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const formProps = Object.fromEntries(formData);
+  api.postSetting(formProps);
+});

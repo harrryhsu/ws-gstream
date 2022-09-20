@@ -111,6 +111,20 @@ app.post("/api/zoom/down", (req, res) => {
   okay(res);
 });
 
+app.get("/api/setting", (req, res) => {
+  okay(res, stream.setting);
+});
+
+app.post("/api/setting", (req, res) => {
+  const setting = req.body;
+  if (process.env.NODE_ENV === "production") {
+    Object.keys(setting).forEach((key) => stream.setSrcProp(key, setting[key]));
+    stream.restart();
+  } else
+    Object.keys(setting).forEach((key) => (stream.setting[key] = setting[key]));
+  okay(res);
+});
+
 app.get("*.map", function (req, res) {
   fail(res, "ER_INVALID", "Does not support debug symbol", 404);
 });

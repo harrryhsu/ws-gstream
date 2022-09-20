@@ -40,13 +40,46 @@ stream.onFrame = (cb) => {
 };
 
 const src = stream.findChild("src");
+stream.setting = {};
 stream.setSrcProp = (prop, value) => {
   src[prop] = value;
+  stream.setting[prop] = value;
 };
 
 stream.restart = () => {
   stream.stop();
   stream.play();
 };
+
+const defaultSetting = {
+  blocksize: 4096,
+  "num-buffers": -1,
+  "do-timestamp": true,
+  silent: true,
+  timeout: 0,
+  wbmode: 1,
+  saturation: 1,
+  exposuretimerange: "34000 358733000",
+  gainrange: "1 16",
+  ispdigitalgainrange: "1 8",
+  "tnr-strength": -1,
+  "tnr-mode": 1,
+  "ee-mode": 1,
+  "ee-strength": -1,
+  aeantibanding: 1,
+  exposurecompensation: 0,
+  aelock: false,
+  awblock: false,
+  maxperf: false,
+  "bufapi-version": false,
+};
+
+if (process.env.NODE_ENV === "production") {
+  Object.keys(defaultSetting).forEach((key) =>
+    stream.setSrcProp(key, defaultSetting[key])
+  );
+} else {
+  stream.setting = defaultSetting;
+}
 
 module.exports = stream;
