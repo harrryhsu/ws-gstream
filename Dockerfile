@@ -10,3 +10,4 @@ RUN apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libg
 
 RUN apt install -y gstreamer1.0-rtsp
 
+RUN apt install ffmpeg -y

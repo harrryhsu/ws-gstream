@@ -6,6 +6,7 @@ const ci2c = require("./ci2c");
 const stream = require("./stream");
 const ws = require("ws");
 const path = require("path");
+const wsStream = require("./wsStream");
 
 const app = express();
 const sockets = [];
@@ -141,7 +142,7 @@ app.use((err, req, res, next) => {
 });
 
 if (!isDev && !ci2c.Lens_FindMCU()) throw "No i2c bus found";
-stream.onFrame((buf) => wss.broadcast(buf));
+// stream.onFrame((buf) => wss.broadcast(buf));
 stream.play();
 
 app
@@ -151,6 +152,22 @@ app
       wss.emit("connection", websocket, request);
     });
   });
+
+const waitForRtsp = () => {
+  setTimeout(() => {
+    const sstream = new wsStream({
+      url:
+        process.env.NODE_ENV == "development"
+          ? "rtsp://host.docker.internal:8554/live"
+          : "rtsp://localhost:8554/live",
+      onFrame: (frame) => wss.broadcast(frame),
+    });
+
+    sstream.on("exit", waitForRtsp);
+  }, 10000);
+};
+
+waitForRtsp();
 
 const exitHandler = (...args) => {
   console.log(args);
