@@ -4,7 +4,7 @@ const Events = require("events");
 class Stream extends Events {
   constructor(options) {
     super();
-    const { url, onFrame, ffmpegPath = "ffmpeg" } = options;
+    const { url, log = false, onFrame, ffmpegPath = "ffmpeg" } = options;
 
     this.spawnOptions = [
       "-y",
@@ -47,11 +47,11 @@ class Stream extends Events {
       onFrame(data);
     });
     this.stream.stderr.on("data", (data) => {
-      console.log(data.toString());
+      if (log) console.log(data.toString());
       return this.emit("ffmpegData", data);
     });
     this.stream.on("exit", (code, signal) => {
-      console.error("RTSP stream exited with error: " + code);
+      if (log) console.error("RTSP stream exited with error: " + code);
       return this.emit("exit");
     });
   }
