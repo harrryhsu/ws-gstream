@@ -147,7 +147,7 @@ const newButton = (text) => {
 newButton("Focus up").addEventListener("click", api.focusUp);
 newButton("Focus down").addEventListener("click", api.focusDown);
 newButton("Zoom up").addEventListener("click", api.zoomUp);
-newButton("Zoom down").addEventListener("click", api.focuzoomDownsDown);
+newButton("Zoom down").addEventListener("click", api.zoomDown);
 
 const form = document.getElementById("form");
 const newInput = (id, text, value, type = "text") => {
@@ -174,7 +174,6 @@ form.addEventListener("submit", (e, ...args) => {
   const settings = Object.fromEntries(formData);
   Object.keys(settings).forEach((key) => {
     const value = settings[key].toString().toLowerCase();
-    console.log(key, value, value.includes(" "), parseFloat(value));
     if (value === "true") settings[key] = true;
     else if (value === "false") settings[key] = false;
     else if (!value.includes(" ")) {
