@@ -11,9 +11,9 @@ if (process.env.NODE_ENV == "development") {
 } else {
   stream = new gstreamer.Pipeline(`
 		nvarguscamerasrc sensor-id=0 name=src ! 
-		nvv4l2h264enc ! 
+		nvv4l2h264enc num-B-Frames=0 disable-cabac=true preset-level=1 ! 
 		tee name=t ! queue ! h264parse ! rtspclientsink location=rtsp://localhost:8554/live protocols=tcp
-		t. ! appsink name=appsink
+		t. ! queue ! appsink name=appsink
 	`);
 }
 
