@@ -1,21 +1,8 @@
 {
   "targets": [
     {
-      "target_name": "ci2c",
-      "cflags!": [ "-fno-exceptions" ],
-      "cflags_cc!": [ "-fno-exceptions" ],
-      "sources": [ "addons/ci2c.cc", "addons/i2c.c" ],
-			'include_dirs': ["<!(node -p \"require('node-addon-api').include_dir\")"],
-      'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ],
-    },
-		 {
       "target_name": "gstreamer-superficial",
-      "sources": [ 
-				"fork/node-gstreamer-superficial-master/gstreamer.cpp", 
-				"fork/node-gstreamer-superficial-master/GLibHelpers.cpp", 
-				"fork/node-gstreamer-superficial-master/GObjectWrap.cpp", 
-				"fork/node-gstreamer-superficial-master/Pipeline.cpp" 
-			],
+      "sources": [ "gstreamer.cpp", "GLibHelpers.cpp", "GObjectWrap.cpp", "Pipeline.cpp" ],
 	  "include_dirs": [
 		"<!(node -e \"require('nan')\")"
 	  ],
@@ -64,6 +51,5 @@
 		}]
 	  ]
     }
-  
   ]
 }

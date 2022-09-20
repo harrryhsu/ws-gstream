@@ -3,7 +3,10 @@
 		"*.erb": "html",
 		"i2c.c": "cpp",
 		"tbimage.c": "cpp",
-		"string": "cpp"
+		"string": "cpp",
+		"functional": "cpp",
+		"system_error": "cpp",
+		"xtr1common": "cpp"
 	},
 	"files.exclude": {
 		"**/.git": true,

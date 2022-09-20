@@ -6,7 +6,7 @@
   "scripts": {
     "init": "node-gyp configure",
     "build": "node-gyp build",
-    "start": "NODE_ENV=development nodemon src/app",
+    "start": "NODE_ENV=development node src/app",
     "start:prod": "NODE_ENV=production node src/app"
   },
   "author": "",

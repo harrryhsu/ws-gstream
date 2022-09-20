@@ -1,4 +1,4 @@
-const gstreamer = require("gstreamer-superficial");
+const gstreamer = require("./gstreamer-superficial");
 var stream;
 if (process.env.NODE_ENV == "development") {
   stream = new gstreamer.Pipeline(`
@@ -79,6 +79,7 @@ if (process.env.NODE_ENV === "production") {
     stream.setSrcProp(key, defaultSetting[key])
   );
 } else {
+  stream.setSrcProp("buffer-mode", 1);
   stream.setting = defaultSetting;
 }
 
