@@ -171,6 +171,16 @@ api.getSetting().then((settings) => {
 form.addEventListener("submit", (e, ...args) => {
   e.preventDefault();
   const formData = new FormData(e.target);
-  const formProps = Object.fromEntries(formData);
-  api.postSetting(formProps);
+  const settings = Object.fromEntries(formData);
+  Object.keys(settings).forEach((key) => {
+    const value = settings[key].toString().toLowerCase();
+    console.log(key, value, value.includes(" "), parseFloat(value));
+    if (value === "true") settings[key] = true;
+    else if (value === "false") settings[key] = false;
+    else if (!value.includes(" ")) {
+      if (parseFloat(value) !== NaN) settings[key] = parseFloat(value);
+      else if (parseInt(value) !== NaN) settings[key] = parseInt(value);
+    }
+  });
+  api.postSetting(settings);
 });
