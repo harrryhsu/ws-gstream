@@ -1,4 +1,4 @@
-const ci2c = require("./ci2c");
+const ci2c = require("../src/ci2c");
 
 ci2c.Lens_FindMCU();
 ci2c.Lens_ICRMode(true);

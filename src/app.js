@@ -4,8 +4,29 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const ci2c = require("./ci2c");
 const stream = require("./stream");
+const ws = require("ws");
+const path = require("path");
 
 const app = express();
+const sockets = [];
+const wss = new ws.Server({
+  noServer: true,
+  perMessageDeflate: false,
+});
+
+const isDev = process.env.NODE_ENV === "development";
+
+wss.on("connection", (socket, request) => {
+  sockets.push(socket);
+  socket.reqUrl = request.url;
+
+  socket.on("close", () => {
+    const index = sockets.indexOf(socket);
+    if (index !== -1) sockets.splice(index, 1);
+  });
+});
+
+wss.broadcast = (data) => sockets.forEach((x) => x.send(data));
 
 const okay = (res, data) => {
   res.contentType("application/json").status(200).send({
@@ -55,39 +76,70 @@ app.use(function (req, res, next) {
 
 app.use(express.static("public"));
 
-app.get("/api/init", (req, res) => {
-  ci2c.Lens_ICRMode(true);
-  ci2c.Lens_ReadLensData();
-  ci2c.Lens_Initial();
-  ci2c.Piris_Initial();
+app.post("/api/init", (req, res) => {
+  console.log("API: Init");
+  if (!isDev) {
+    ci2c.Lens_ICRMode(true);
+    ci2c.Lens_ReadLensData();
+    ci2c.Lens_Initial();
+    ci2c.Piris_Initial();
+  }
   okay(res);
 });
 
-app.get("/api/focus/up", (req, res) => {
-  ci2c.Lens_Focusmove(16);
+app.post("/api/focus/up", (req, res) => {
+  console.log("API: Focus up");
+  if (!isDev) ci2c.Lens_Focusmove(16);
   okay(res);
 });
 
-app.get("/api/focus/down", (req, res) => {
-  ci2c.Lens_Focusmove(-16);
+app.post("/api/focus/down", (req, res) => {
+  console.log("API: Focus down");
+  if (!isDev) ci2c.Lens_Focusmove(-16);
   okay(res);
 });
 
-app.get("/api/zoom/up", (req, res) => {
-  ci2c.Lens_Zoommove(ci2c.Lens_GetZoommoveStep() + 1);
+app.post("/api/zoom/up", (req, res) => {
+  console.log("API: Zoom up");
+  if (!isDev) ci2c.Lens_Zoommove(ci2c.Lens_GetZoommoveStep() + 1);
   okay(res);
 });
 
-app.get("/api/zoom/down", (req, res) => {
-  ci2c.Lens_Zoommove(ci2c.Lens_GetZoommoveStep() - 1);
+app.post("/api/zoom/down", (req, res) => {
+  console.log("API: Zoom down");
+  if (!isDev) ci2c.Lens_Zoommove(ci2c.Lens_GetZoommoveStep() - 1);
   okay(res);
 });
 
-ci2c.Lens_FindMCU();
+app.get("*.map", function (req, res) {
+  fail(res, "ER_INVALID", "Does not support debug symbol", 404);
+});
+
+const indexFile = path.join(process.cwd(), "./public/index.html");
+
+// Fallback for react router
+app.get("*", function (req, res) {
+  res.sendFile(indexFile);
+});
+
+app.use((err, req, res, next) => {
+  error(res)(err);
+});
+
+if (!isDev && !ci2c.Lens_FindMCU()) throw "No i2c bus found";
+stream.onFrame((buf) => wss.broadcast(buf));
 stream.play();
-app.listen(8080, () => console.log(`App listening at http://localhost:8080`));
 
-const exitHandler = (options, exitCode) => {
+app
+  .listen(8080, () => console.log(`App listening at http://localhost:8080`))
+  .on("upgrade", (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (websocket) => {
+      wss.emit("connection", websocket, request);
+    });
+  });
+
+const exitHandler = (...args) => {
+  console.log(args);
   stream.stop();
   process.exit();
 };
