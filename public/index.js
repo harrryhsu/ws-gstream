@@ -148,6 +148,7 @@ newButton("Focus up").addEventListener("click", api.focusUp);
 newButton("Focus down").addEventListener("click", api.focusDown);
 newButton("Zoom up").addEventListener("click", api.zoomUp);
 newButton("Zoom down").addEventListener("click", api.zoomDown);
+newButton("Init").addEventListener("click", api.init);
 
 const form = document.getElementById("form");
 const newInput = (id, text, value, type = "text") => {
