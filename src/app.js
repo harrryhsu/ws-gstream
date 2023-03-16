@@ -11,9 +11,13 @@ const wss = new ws.Server({
   noServer: true,
   perMessageDeflate: false,
 });
-const stream = Stream(
-  "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4"
-);
+
+const isDev = process.env.NODE_ENV !== "production";
+const rtsp = isDev
+  ? "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4"
+  : "rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201";
+
+const stream = Stream(rtsp, 1280, 720, 15);
 
 wss.on("connection", (socket, request) => {
   sockets.push(socket);
