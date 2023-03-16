@@ -134,4 +134,4 @@ const start = (wsUrl) => {
   };
 };
 
-start(`ws://${window.location.host}`);
+start(`ws://localhost:8080`);

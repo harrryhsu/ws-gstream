@@ -8,5 +8,5 @@ services:
       - 8080:8080
     volumes:
       - ./:/root/work
-    command: npm start
+    command: bash
     
