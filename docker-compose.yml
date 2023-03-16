@@ -9,8 +9,4 @@ services:
     volumes:
       - ./:/root/work
     command: npm start
-  rtsp: 
-    image: aler9/rtsp-simple-server
-    ports:
-      - 8554:8554
     
