@@ -50,7 +50,8 @@
 		"xlocnum": "cpp",
 		"xmemory": "cpp",
 		"xmemory0": "cpp",
-		"xstddef": "cpp"
+		"xstddef": "cpp",
+		"xtree": "cpp"
 	},
 	"files.exclude": {
 		"**/.git": true,

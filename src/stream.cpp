@@ -19,15 +19,15 @@ void *gst_thread(void *ptr)
 
 	loop = g_main_loop_new(NULL, FALSE);
 
-	std::string pipelineStr = "rtspsrc location=rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201 name=src !\
-											decodebin ! videoscale ! video/x-raw,width=1280,height=720 !\ 
-											x264enc bitrate=500000 bframes=0 key-int-max=100 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency !\
-											appsink name=sink";
-
-	// std::string pipelineStr = "rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !\
-	// 										rtph264depay ! h264parse ! avdec_h264 ! queue !\
-	// 										x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+	// std::string pipelineStr = "rtspsrc location=rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201 name=src !\
+	// 										decodebin ! videoscale ! video/x-raw,width=1280,height=720 !\ 
+	// 										x264enc bitrate=500000 bframes=0 key-int-max=100 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency !\
 	// 										appsink name=sink";
+
+	std::string pipelineStr = "rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !\
+											rtph264depay ! h264parse ! avdec_h264 ! queue !\
+											x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+											appsink name=sink";
 
 	pipeline = gst_parse_launch(pipelineStr.c_str(), nullptr);
 	appsink = gst_bin_get_by_name((GstBin *)pipeline, "sink");
@@ -90,40 +90,38 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 	return TRUE;
 }
 
-void pull_frame(int *outlen)
+bool pull_frame()
 {
 	if (!appsink)
-		return;
+		return false;
 
 	GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
 
 	if (sample == NULL)
-		return;
+		return false;
 
 	GstBuffer *buffer = gst_sample_get_buffer(sample);
 	GstMapInfo map;
 	gst_buffer_map(buffer, &map, GST_MAP_READ);
 
 	memmove(writeBuffer, map.data, map.size);
+	writeLength = map.size;
 
 	gst_buffer_unmap(buffer, &map);
 	gst_sample_unref(sample);
 
-	*outlen = map.size;
+	return true;
 }
 
 void *stream_thread(void *ptr)
 {
 	gst_init(nullptr, nullptr);
 	pthread_t gst = run_thread(gst_thread);
-	int len = 0;
 
 	while (1)
 	{
-		pull_frame(&len);
-		if (len != 0)
-			write(len);
-		len = 0;
+		if (pull_frame())
+			write();
 	}
 
 	pthread_join(gst, nullptr);

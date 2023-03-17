@@ -34,9 +34,14 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 		for (int i = 0; i < MAX_CONNECTION; i++)
 		{
 			if (!sockets[i])
+			{
 				sockets[i] = data;
+				break;
+			}
 		}
+		// TODO Disconnect
 		break;
+
 	case LWS_CALLBACK_CLOSED:
 		printf("Disconnected\n");
 		for (int i = 0; i < MAX_CONNECTION; i++)
@@ -45,6 +50,7 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 				sockets[i] = nullptr;
 		}
 		break;
+
 	case LWS_CALLBACK_SERVER_WRITEABLE:
 		if (!data->ready)
 			break;
@@ -64,21 +70,14 @@ struct lws_protocols protocols[] = {
 		},
 		{NULL, NULL, 0}};
 
-void write(int len)
+void write()
 {
-	writeLength = len;
 	for (int i = 0; i < MAX_CONNECTION; i++)
 	{
 		if (sockets[i])
 			sockets[i]->ready = true;
 	}
 	lws_callback_on_writable_all_protocol(context, &protocols[0]);
-}
-
-uint64_t timeSinceEpochMillisec()
-{
-	using namespace std::chrono;
-	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
 void *lws_thread(void *ptr)
