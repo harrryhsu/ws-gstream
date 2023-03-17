@@ -64,9 +64,8 @@ struct lws_protocols protocols[] = {
 		},
 		{NULL, NULL, 0}};
 
-void write(unsigned char *buffer, int len)
+void write(int len)
 {
-	memcpy(writeBuffer, buffer, len);
 	writeLength = len;
 	for (int i = 0; i < MAX_CONNECTION; i++)
 	{
@@ -95,7 +94,6 @@ void *lws_thread(void *ptr)
 
 	lws_context_default_loop_run_destroy(context);
 
-	lws_context_destroy(context);
 	printf("Websocket server exiting...\n");
 
 	return nullptr;

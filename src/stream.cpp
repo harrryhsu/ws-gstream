@@ -21,8 +21,8 @@ void *gst_thread(void *ptr)
 
 	std::string pipelineStr = "rtspsrc location=rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201 name=src !\
 											rtph264depay ! h264parse ! avdec_h264 !\
-											queue ! videoconvert ! videoscale ! video/x-raw,width=1280,height=720,framerate=15/1 !\ 
-											x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+											videoconvert ! videoscale ! video/x-raw,width=600,height=400,framerate=15/1 !\
+											x264enc bitrate=500000 bframes=0 key-int-max=100 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency !\
 											appsink name=sink";
 
 	// std::string pipelineStr = "rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !\
@@ -91,29 +91,26 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 	return TRUE;
 }
 
-char *pull_frame(int *outlen)
+void pull_frame(int *outlen)
 {
 	if (!appsink)
-		return NULL;
+		return;
 
 	GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
 
 	if (sample == NULL)
-		return NULL;
+		return;
 
 	GstBuffer *buffer = gst_sample_get_buffer(sample);
 	GstMapInfo map;
 	gst_buffer_map(buffer, &map, GST_MAP_READ);
 
-	char *pRet = new char[map.size];
-	memmove(pRet, map.data, map.size);
+	memmove(writeBuffer, map.data, map.size);
 
 	gst_buffer_unmap(buffer, &map);
 	gst_sample_unref(sample);
 
 	*outlen = map.size;
-
-	return pRet;
 }
 
 void *stream_thread(void *ptr)
@@ -121,15 +118,13 @@ void *stream_thread(void *ptr)
 	gst_init(nullptr, nullptr);
 	pthread_t gst = run_thread(gst_thread);
 	int len = 0;
-	char *frame;
 
 	while (1)
 	{
-		frame = pull_frame(&len);
-		if (frame != NULL)
-			write((unsigned char *)frame, len);
-
-		usleep(20 * 1000);
+		pull_frame(&len);
+		if (len != 0)
+			write(len);
+		len = 0;
 	}
 
 	pthread_join(gst, nullptr);
