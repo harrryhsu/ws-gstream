@@ -19,15 +19,16 @@ void *gst_thread(void *ptr)
 
 	loop = g_main_loop_new(NULL, FALSE);
 
-	auto rtsp =
-			"rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4";
-	// "rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201";
+	std::string pipelineStr = "rtspsrc location=rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201 name=src !\
+											rtph264depay ! h264parse ! avdec_h264 !\
+											queue ! videoconvert ! videoscale ! video/x-raw,width=1280,height=720,framerate=15/1 !\ 
+											x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+											appsink name=sink";
 
-	std::string pipelineStr = "rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !\
-									rtph264depay ! h264parse ! avdec_h264 !\
-									queue ! videoconvert !\
-									x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
-									appsink name=sink";
+	// std::string pipelineStr = "rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !\
+	// 										rtph264depay ! h264parse ! avdec_h264 ! queue !\
+	// 										x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+	// 										appsink name=sink";
 
 	pipeline = gst_parse_launch(pipelineStr.c_str(), nullptr);
 	appsink = gst_bin_get_by_name((GstBin *)pipeline, "sink");
