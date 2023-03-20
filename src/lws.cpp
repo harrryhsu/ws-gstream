@@ -36,11 +36,10 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 			if (!sockets[i])
 			{
 				sockets[i] = data;
-				break;
+				return 0;
 			}
 		}
-		// TODO Disconnect
-		break;
+		return -1; // Terminate connection
 
 	case LWS_CALLBACK_CLOSED:
 		printf("Disconnected\n");
