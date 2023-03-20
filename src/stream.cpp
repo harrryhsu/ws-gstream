@@ -20,7 +20,7 @@ void *gst_thread(void *ptr)
 	loop = g_main_loop_new(NULL, FALSE);
 
 	std::string pipelineStr = "rtspsrc location=rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201 name=src latency=0 buffer-mode=none !\
-											decodebin ! videoscale ! video/x-raw,width=1280,height=720 !\ 
+											decodebin ! videoscale ! video/x-raw,width=2048,height=1080 !\
 											x264enc bitrate=500000 bframes=0 key-int-max=100 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency !\
 											appsink name=sink";
 
