@@ -51,7 +51,9 @@
 		"xmemory": "cpp",
 		"xmemory0": "cpp",
 		"xstddef": "cpp",
-		"xtree": "cpp"
+		"xtree": "cpp",
+		"map": "cpp",
+		"sstream": "cpp"
 	},
 	"files.exclude": {
 		"**/.git": true,

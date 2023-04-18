@@ -1,63 +1,67 @@
-#ifndef STREAM
-#define STREAM
+#include "stream.h"
 
-#include <gst/gst.h>
-#include <glib.h>
-#include <gst/app/gstappsink.h>
-#include "./common.cpp"
-#include "./lws.cpp"
+Stream::Stream(WebSocket *lws, string path, string url)
+{
+	this->lws = lws;
+	this->path = path;
+	this->url = url;
+	lws->addConfig(path);
+}
 
-static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data);
+Stream::~Stream()
+{
+	if (this->thread)
+		delete this->thread;
+}
 
-static GstElement *appsink, *pipeline;
-static GMainLoop *loop;
-static GstBus *bus;
-
-void *gst_thread(void *ptr)
+void Stream::gst_thread()
 {
 	guint bus_watch_id;
 
-	loop = g_main_loop_new(NULL, FALSE);
+	this->loop = g_main_loop_new(NULL, FALSE);
 
-	std::string pipelineStr = "rtspsrc location=rtsp://admin:903fjjjjj@192.168.1.203/Streaming/Channels/201 name=src latency=0 buffer-mode=none !\
-											decodebin ! videoscale ! video/x-raw,width=2048,height=1080 !\
-											x264enc bitrate=500000 bframes=0 key-int-max=100 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency !\
-											appsink name=sink";
+	ostringstream ss;
+	ss << "rtspsrc location="
+		 << this->url
+		 << " name=src latency=0 buffer-mode=none !\
+			decodebin ! videoscale ! video/x-raw,width=2048,height=1080 !\
+			x264enc bitrate=1000000 bframes=0 key-int-max=30 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+			appsink name=sink";
+	string pipelineStr = ss.str();
 
-	// std::string pipelineStr = "rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 name=src !\
-	// 										rtph264depay ! h264parse ! avdec_h264 ! queue !\
-	// 										x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
-	// 										appsink name=sink";
-
-	pipeline = gst_parse_launch(pipelineStr.c_str(), nullptr);
-	appsink = gst_bin_get_by_name((GstBin *)pipeline, "sink");
+	this->pipeline = gst_parse_launch(pipelineStr.c_str(), nullptr);
+	this->appsink = gst_bin_get_by_name((GstBin *)this->pipeline, "sink");
 
 	/* we add a message handler */
-	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
-	bus_watch_id = gst_bus_add_watch(bus, bus_call, loop);
-	gst_object_unref(bus);
+	this->bus = gst_pipeline_get_bus(GST_PIPELINE(this->pipeline));
+	bus_watch_id = gst_bus_add_watch(this->bus, this->bus_call, this->loop);
+	gst_object_unref(this->bus);
+	this->bus = nullptr;
 
 	/* Set the pipeline to "playing" state*/
 	g_print("Now set pipeline in state playing\n");
-	gst_element_set_state(pipeline, GST_STATE_PLAYING);
+	gst_element_set_state(this->pipeline, GST_STATE_PLAYING);
+	this->gst_loop_started = true;
 
 	/* Iterate */
 	g_print("Running...\n");
-	g_main_loop_run(loop);
+	g_main_loop_run(this->loop);
 
 	/* Out of the main loop, clean up nicely */
 	g_print("Returned, stopping playback\n");
-	gst_element_set_state(pipeline, GST_STATE_NULL);
+	gst_element_set_state(this->pipeline, GST_STATE_NULL);
 
 	g_print("Deleting pipeline\n");
-	gst_object_unref(GST_OBJECT(pipeline));
-	g_source_remove(bus_watch_id);
-	g_main_loop_unref(loop);
+	gst_object_unref(GST_OBJECT(this->pipeline));
+	this->pipeline = nullptr;
 
-	return nullptr;
+	g_source_remove(bus_watch_id);
+	g_main_loop_unref(this->loop);
+	this->loop = nullptr;
+	this->appsink = nullptr;
 }
 
-static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
+gboolean Stream::bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 {
 	GMainLoop *loop = (GMainLoop *)data;
 
@@ -90,12 +94,12 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 	return TRUE;
 }
 
-bool pull_frame()
+bool Stream::pull_frame()
 {
-	if (!appsink)
+	if (!this->appsink)
 		return false;
 
-	GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
+	GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(this->appsink));
 
 	if (sample == NULL)
 		return false;
@@ -104,8 +108,10 @@ bool pull_frame()
 	GstMapInfo map;
 	gst_buffer_map(buffer, &map, GST_MAP_READ);
 
-	memmove(writeBuffer, map.data, map.size);
-	writeLength = map.size;
+	auto config = this->lws->getConfig(this->path);
+	memmove(config->writeBuffer, map.data, map.size);
+	config->writeLength = map.size;
+	lws->write(this->path);
 
 	gst_buffer_unmap(buffer, &map);
 	gst_sample_unref(sample);
@@ -113,18 +119,44 @@ bool pull_frame()
 	return true;
 }
 
-void *stream_thread(void *ptr)
+void Stream::stream_thread()
 {
+	this->started = true;
 	gst_init(nullptr, nullptr);
-	pthread_t gst = run_thread(gst_thread);
 
-	while (1)
+	std::function<void(void)> gstf = std::bind(&Stream::gst_thread, this);
+	Thread gst(gstf);
+	gst.start();
+
+	while (this->started)
 	{
-		if (pull_frame())
-			write();
+		if (this->gst_loop_started)
+			pull_frame();
 	}
 
-	pthread_join(gst, nullptr);
+	gst.wait();
 }
 
-#endif
+void Stream::start()
+{
+	// this->stop();
+	this->thread = new Thread(std::bind(&Stream::stream_thread, this));
+	this->thread->start();
+}
+
+void Stream::stop()
+{
+	this->started = false;
+	if (this->thread)
+	{
+		this->thread->kill();
+		delete this->thread;
+	}
+	if (this->loop)
+		g_main_loop_quit(this->loop);
+}
+
+void Stream::wait()
+{
+	this->thread->wait();
+}

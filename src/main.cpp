@@ -1,16 +1,14 @@
-#include "stream.cpp"
-#include "lws.cpp"
-
-void __main()
-{
-	pthread_t stream = run_thread(stream_thread);
-	pthread_t lws = run_thread(lws_thread);
-	pthread_join(stream, nullptr);
-	pthread_join(lws, nullptr);
-}
+#include "stream.h"
 
 int main(int argc, char *argv[])
 {
-	__main();
+	WebSocket *ws = WebSocket::Singleton(8080);
+	Stream stream1(ws, "/test1", "rtsp://host.docker.internal:8554/test");
+	Stream stream2(ws, "/test2", "rtsp://host.docker.internal:8554/test");
+	stream1.start();
+	stream2.start();
+	ws->start();
+	ws->wait();
+
 	return 0;
 }

@@ -1,41 +1,27 @@
-#ifndef LWS
-#define LWS
+#include "lws.h"
 
-#include "common.cpp"
-#include "libwebsockets.h"
+WebSocket *WebSocket::Current = nullptr;
 
-#define MAX_PAYLOAD_SIZE 10 * 1024
-#define MAX_CONNECTION 10
-#define WRITE_BUFFER_SIZE 1000000
-
-struct session_data
-{
-	int id;
-	lws *wsi;
-	bool ready;
-};
-
-struct lws_context *context;
-static int id = 0;
-static session_data *sockets[MAX_CONNECTION];
-unsigned char writeBuffer[WRITE_BUFFER_SIZE];
-int writeLength;
-
-static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+int WebSocket::callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
 	struct session_data *data = (struct session_data *)user;
+	auto ws = WebSocket::Current;
 
 	switch (reason)
 	{
 	case LWS_CALLBACK_ESTABLISHED:
-		printf("Connected\n");
 		data->wsi = wsi;
-		data->id = id++;
+		data->id = ws->id++;
+		char path[50];
+		lws_hdr_copy(wsi, path, 50, WSI_TOKEN_GET_URI);
+		data->path = path;
+
 		for (int i = 0; i < MAX_CONNECTION; i++)
 		{
-			if (!sockets[i])
+			if (!ws->sockets[i])
 			{
-				sockets[i] = data;
+				ws->sockets[i] = data;
+				cout << "Connected: " << path << endl;
 				return 0;
 			}
 		}
@@ -45,56 +31,124 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 		printf("Disconnected\n");
 		for (int i = 0; i < MAX_CONNECTION; i++)
 		{
-			if (sockets[i] && sockets[i]->id == data->id)
-				sockets[i] = nullptr;
+			if (ws->sockets[i] && ws->sockets[i]->id == data->id)
+				ws->sockets[i] = nullptr;
 		}
 		break;
 
 	case LWS_CALLBACK_SERVER_WRITEABLE:
 		if (!data->ready)
 			break;
-		lws_write(wsi, writeBuffer, writeLength, LWS_WRITE_BINARY);
+
+		auto config = ws->getConfig(data->path);
+		if (!config)
+		{
+			return -1;
+		}
+
+		lws_write(wsi, config->writeBuffer, config->writeLength, LWS_WRITE_BINARY);
 		data->ready = false;
 	}
 
 	return 0;
 }
 
-struct lws_protocols protocols[] = {
-		{
-				"ws",
-				callback,
-				sizeof(struct session_data),
-				MAX_PAYLOAD_SIZE,
-		},
-		{NULL, NULL, 0}};
+WebSocket *WebSocket::Singleton(int port)
+{
+	if (!WebSocket::Current)
+		WebSocket::Current = new WebSocket(port);
+	return WebSocket::Current;
+}
 
-void write()
+WebSocket::WebSocket(int port)
+{
+	this->port = port;
+
+	this->protocols[0].name = "ws";
+	this->protocols[0].callback = callback;
+	this->protocols[0].per_session_data_size = sizeof(struct session_data);
+	this->protocols[0].rx_buffer_size = MAX_PAYLOAD_SIZE;
+
+	this->protocols[1].name = NULL;
+	this->protocols[1].callback = NULL;
+	this->protocols[1].per_session_data_size = 0;
+
+	for (int i = 0; i < MAX_CONNECTION; i++)
+	{
+		this->sockets[i] = nullptr;
+	}
+}
+
+WebSocket::~WebSocket()
+{
+	delete this->thread;
+	for (auto const &stream : this->streams)
+	{
+		delete stream.second;
+	}
+	this->streams.clear();
+}
+
+void WebSocket::addConfig(string path)
+{
+	stream_config *stream = new stream_config();
+	stream->path = path;
+	this->streams[path] = stream;
+}
+
+stream_config *WebSocket::getConfig(string path)
+{
+	return this->streams[path];
+}
+
+void WebSocket::write(string path)
 {
 	for (int i = 0; i < MAX_CONNECTION; i++)
 	{
-		if (sockets[i])
-			sockets[i]->ready = true;
+		if (this->sockets[i] && this->sockets[i]->path.compare(path) == 0)
+		{
+			this->sockets[i]->ready = true;
+		}
 	}
-	lws_callback_on_writable_all_protocol(context, &protocols[0]);
+
+	lws_callback_on_writable_all_protocol(this->context, &this->protocols[0]);
 }
 
-void *lws_thread(void *ptr)
+void WebSocket::lws_thread()
 {
 	struct lws_context_creation_info ctx_info = {0};
-	ctx_info.port = 8080;
+	ctx_info.port = this->port;
 	ctx_info.iface = NULL;
-	ctx_info.protocols = protocols;
+	ctx_info.protocols = this->protocols;
 	ctx_info.gid = -1;
 	ctx_info.uid = -1;
 	ctx_info.options = LWS_SERVER_OPTION_VALIDATE_UTF8;
-	context = lws_create_context(&ctx_info);
+
+	this->context = lws_create_context(&ctx_info);
 
 	lws_context_default_loop_run_destroy(context);
 
 	printf("Websocket server exiting...\n");
-
-	return nullptr;
 }
 
-#endif
+void WebSocket::start()
+{
+	// this->stop();
+	std::function<void(void)> lws = std::bind(&WebSocket::lws_thread, this);
+	this->thread = new Thread(lws);
+	this->thread->start();
+}
+
+void WebSocket::stop()
+{
+	if (this->thread)
+	{
+		this->thread->kill();
+		delete this->thread;
+	}
+}
+
+void WebSocket::wait()
+{
+	this->thread->wait();
+}
