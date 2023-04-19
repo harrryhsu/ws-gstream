@@ -29,10 +29,10 @@ void Stream::gst_thread()
 	ostringstream ss;
 	ss << "rtspsrc location="
 		 << this->url
-		 << " name=src latency=0 buffer-mode=none !\
+		 << " name=src latency=0  !\
 			decodebin ! videoscale ! video/x-raw,width="
 		 << this->width << ",height=" << this->height << " !\
-			x264enc bitrate=1000000 bframes=0 key-int-max=30 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
+			x264enc bitrate=1000000 bframes=0 key-int-max=10 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
 			appsink name=sink";
 	string pipelineStr = ss.str();
 

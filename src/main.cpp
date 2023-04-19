@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 	Stream stream1(ws, "/test1", "rtsp://host.docker.internal:8554/test");
 	Stream stream2(ws, "/test2", "rtsp://host.docker.internal:8554/test");
 	stream1.start();
-	stream2.start();
+	// stream2.start();
 	ws->start();
 	ws->wait();
 
