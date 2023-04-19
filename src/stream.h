@@ -22,6 +22,9 @@ private:
 	bool started;
 	bool gst_loop_started = false;
 
+	int width = 1080; // 2048
+	int height = 720; // 2080
+
 	static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data);
 	bool pull_frame();
 
@@ -33,6 +36,7 @@ public:
 	void start();
 	void wait();
 	void stop();
+	void setSize(int width, int height);
 };
 
 #endif

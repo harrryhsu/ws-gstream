@@ -14,6 +14,12 @@ Stream::~Stream()
 		delete this->thread;
 }
 
+void Stream::setSize(int width, int height)
+{
+	this->width = width;
+	this->height = height;
+}
+
 void Stream::gst_thread()
 {
 	guint bus_watch_id;
@@ -24,7 +30,8 @@ void Stream::gst_thread()
 	ss << "rtspsrc location="
 		 << this->url
 		 << " name=src latency=0 buffer-mode=none !\
-			decodebin ! videoscale ! video/x-raw,width=2048,height=1080 !\
+			decodebin ! videoscale ! video/x-raw,width="
+		 << this->width << ",height=" << this->height << " !\
 			x264enc bitrate=1000000 bframes=0 key-int-max=30 weightb=false speed-preset=1 cabac=false tune=zerolatency !\
 			appsink name=sink";
 	string pipelineStr = ss.str();
