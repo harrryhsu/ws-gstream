@@ -29,11 +29,11 @@ void Stream::gst_thread()
 	ostringstream ss;
 	ss << "rtspsrc location="
 		 << this->url
-		 << " name=src latency=0  !\
-			decodebin ! videoscale ! video/x-raw,width="
-		 << this->width << ",height=" << this->height << " !\
-			x264enc bitrate=1000 bframes=0 key-int-max=10 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency !\
-			appsink name=sink";
+		 << " name=src latency=0 buffer-mode=none is-live=true ! decodebin ! videoscale ! video/x-raw,width="
+		 << this->width << ",height=" << this->height << " ! "
+		 << (this->h265 ? "x265enc" : "x264enc") << " bitrate=1000 bframes=0 key-int-max=30 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency ! "
+		 << "appsink name=sink";
+
 	string pipelineStr = ss.str();
 
 	this->pipeline = gst_parse_launch(pipelineStr.c_str(), nullptr);
@@ -116,8 +116,17 @@ bool Stream::pull_frame()
 	gst_buffer_map(buffer, &map, GST_MAP_READ);
 
 	auto config = this->lws->getConfig(this->path);
-	memmove(config->writeBuffer, map.data, map.size);
-	config->writeLength = map.size;
+	if (config->first)
+	{
+		memmove(config->writeBufferFirst, map.data, map.size);
+		config->writeLengthFirst = map.size;
+		config->first = false;
+	}
+	else
+	{
+		memmove(config->writeBuffer, map.data, map.size);
+		config->writeLength = map.size;
+	}
 	lws->write(this->path);
 
 	gst_buffer_unmap(buffer, &map);
@@ -166,4 +175,9 @@ void Stream::stop()
 void Stream::wait()
 {
 	this->thread->wait();
+}
+
+void Stream::useH265()
+{
+	this->h265 = true;
 }

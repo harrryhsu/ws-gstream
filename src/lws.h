@@ -16,6 +16,7 @@ struct session_data
 	int id;
 	lws *wsi;
 	bool ready;
+	bool first;
 	string path;
 };
 
@@ -23,7 +24,10 @@ struct stream_config
 {
 	unsigned char writeBuffer[WRITE_BUFFER_SIZE];
 	int writeLength;
+	unsigned char writeBufferFirst[WRITE_BUFFER_SIZE];
+	int writeLengthFirst;
 	string path;
+	bool first;
 };
 
 class WebSocket

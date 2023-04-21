@@ -12,6 +12,7 @@ int WebSocket::callback(struct lws *wsi, enum lws_callback_reasons reason, void 
 	case LWS_CALLBACK_ESTABLISHED:
 		data->wsi = wsi;
 		data->id = ws->id++;
+		data->first = true;
 		char path[50];
 		lws_hdr_copy(wsi, path, 50, WSI_TOKEN_GET_URI);
 		data->path = path;
@@ -46,7 +47,15 @@ int WebSocket::callback(struct lws *wsi, enum lws_callback_reasons reason, void 
 			return -1;
 		}
 
-		lws_write(wsi, config->writeBuffer, config->writeLength, LWS_WRITE_BINARY);
+		if (data->first)
+		{
+			lws_write(wsi, config->writeBufferFirst, config->writeLengthFirst, LWS_WRITE_BINARY);
+			data->first = false;
+		}
+		else
+		{
+			lws_write(wsi, config->writeBuffer, config->writeLength, LWS_WRITE_BINARY);
+		}
 		data->ready = false;
 	}
 
@@ -93,6 +102,7 @@ void WebSocket::addConfig(string path)
 {
 	stream_config *stream = new stream_config();
 	stream->path = path;
+	stream->first = true;
 	this->streams[path] = stream;
 }
 

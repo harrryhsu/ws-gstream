@@ -21,6 +21,7 @@ private:
 	string url;
 	bool started;
 	bool gst_loop_started = false;
+	bool h265 = false;
 
 	int width = 1080; // 2048
 	int height = 720; // 2080
@@ -36,6 +37,7 @@ public:
 	void start();
 	void wait();
 	void stop();
+	void useH265();
 	void setSize(int width, int height);
 };
 
