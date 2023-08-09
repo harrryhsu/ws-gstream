@@ -26,6 +26,7 @@ int WebSocket::callback(struct lws *wsi, enum lws_callback_reasons reason, void 
 				return 0;
 			}
 		}
+		printf("Socket Not Available!\n");
 		return -1; // Terminate connection
 
 	case LWS_CALLBACK_CLOSED:

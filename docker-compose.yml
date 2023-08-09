@@ -8,5 +8,8 @@ services:
       - 8080:8080
     volumes:
       - ./:/root/work
-    command: bash
+    command: ./stream
     
+
+# For dev cli
+# docker compose run env bash
