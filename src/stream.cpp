@@ -29,7 +29,7 @@ void Stream::gst_thread()
 	ostringstream ss;
 	ss << "rtspsrc location="
 		 << this->url
-		 << " name=src latency=0 buffer-mode=none is-live=true ! decodebin ! videoscale ! video/x-raw,width="
+		 << " name=src latency=0 buffer-mode=none is-live=true ! rtph264depay ! decodebin ! videoscale ! video/x-raw,width="
 		 << this->width << ",height=" << this->height << " ! "
 		 << (this->h265 ? "x265enc" : "x264enc") << " bitrate=1000 bframes=0 key-int-max=30 weightb=false speed-preset=ultrafast cabac=false tune=zerolatency ! "
 		 << "appsink name=sink";
